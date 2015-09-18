@@ -9,13 +9,15 @@
 #import "ViewController.h"
 
 #define kCellNumber    (30)
+#define kTimerInterval (0.05f)
 
 @interface CellInfo : NSObject
 
 @property (assign, nonatomic) BOOL isStart;
-@property (assign, nonatomic) NSInteger startValue;
-@property (assign, nonatomic) NSInteger endValue;
-@property (assign, nonatomic) NSInteger curValue;
+@property (assign, nonatomic) CGFloat startValue;
+@property (assign, nonatomic) CGFloat endValue;
+@property (assign, nonatomic) CGFloat curValue;
+@property (assign, nonatomic) CGFloat changeValue;
 
 @end
 
@@ -37,18 +39,14 @@
     [super viewDidLoad];
 
     // 建立資料
-    self.dataArray = [NSMutableArray array];
-    for (NSInteger i = 0; i < kCellNumber; i++) {
-        CellInfo *info = [CellInfo new];
-        info.isStart = NO;
-        info.startValue = 1;
-        info.endValue = (i + 1 + 10);
-        info.curValue = info.startValue;
-        [self.dataArray addObject:info];
-    }
+    [self initializeData];
     
     // 啟動一個 Timer
-    self.timer = [NSTimer scheduledTimerWithTimeInterval:0.05f target:self selector:@selector(updateTime) userInfo:nil repeats:YES];
+    self.timer = [NSTimer scheduledTimerWithTimeInterval:kTimerInterval
+                                                  target:self
+                                                selector:@selector(updateTime)
+                                                userInfo:nil
+                                                 repeats:YES];
     [[NSRunLoop currentRunLoop] addTimer:self.timer
                                  forMode:NSRunLoopCommonModes];
 }
@@ -56,6 +54,43 @@
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
+}
+
+- (void)initializeData {
+    if (self.dataArray) {
+        [self.dataArray removeAllObjects];
+        self.dataArray = nil;
+    }
+    self.dataArray = [NSMutableArray array];
+    for (NSInteger i = 0; i < kCellNumber; i++) {
+        CellInfo *info = [CellInfo new];
+        info.isStart = NO;
+        info.startValue = 1.0f;
+        info.endValue = (i + 2.0f +  (i * 2.0f));
+        info.curValue = info.startValue;
+        info.changeValue = ((info.endValue - info.startValue) / ((1.0f) / kTimerInterval));
+        [self.dataArray addObject:info];
+    }
+}
+
+- (IBAction)onResetButtonPressed:(id)sender {
+
+    if (self.timer) {
+        [self.timer invalidate];
+        self.timer = nil;
+    }
+    
+    [self initializeData];
+    [self.tableView setContentOffset:CGPointMake(0.0f, -self.tableView.contentInset.top) animated:NO];
+    [self.tableView reloadData];
+    
+    self.timer = [NSTimer scheduledTimerWithTimeInterval:kTimerInterval
+                                                  target:self
+                                                selector:@selector(updateTime)
+                                                userInfo:nil
+                                                 repeats:YES];
+    [[NSRunLoop currentRunLoop] addTimer:self.timer
+                                 forMode:NSRunLoopCommonModes];
 }
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
@@ -85,7 +120,7 @@
     
     // 更新目前數值
     cell.textLabel.font = [UIFont systemFontOfSize:18.0f];
-    cell.textLabel.text = [NSString stringWithFormat:@"%zd", info.curValue];
+    cell.textLabel.text = [NSString stringWithFormat:@"%zd", (NSInteger)info.curValue];
     cell.tag = indexPath.row;
 }
 
@@ -96,7 +131,7 @@
         CellInfo *info = (CellInfo*)[self.dataArray objectAtIndex:i];
         if (info.isStart == YES) {
             if (info.curValue < info.endValue) {
-                info.curValue += 1;
+                info.curValue += info.changeValue;
                 
                 // 重新載入 cell
                 //NSIndexPath *indexPath = [NSIndexPath indexPathForRow:i inSection:0];
@@ -113,7 +148,7 @@
     NSArray *cellArray = [self.tableView visibleCells];
     for (UITableViewCell *cell in cellArray) {
         CellInfo *info = (CellInfo*)[self.dataArray objectAtIndex:cell.tag];
-        cell.textLabel.text = [NSString stringWithFormat:@"%zd", info.curValue];
+        cell.textLabel.text = [NSString stringWithFormat:@"%zd", (NSInteger)info.curValue];
     }
 
     // 決定是否停止 timer
