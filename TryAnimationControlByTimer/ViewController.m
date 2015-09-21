@@ -57,6 +57,7 @@
 }
 
 - (void)initializeData {
+    
     if (self.dataArray) {
         [self.dataArray removeAllObjects];
         self.dataArray = nil;
@@ -66,7 +67,7 @@
         CellInfo *info = [CellInfo new];
         info.isStart = NO;
         info.startValue = 1.0f;
-        info.endValue = (i + 2.0f +  (i * 2.0f));
+        info.endValue = (i + 2.0f + i);
         info.curValue = info.startValue;
         info.changeValue = ((info.endValue - info.startValue) / ((1.0f) / kTimerInterval));
         [self.dataArray addObject:info];
@@ -112,6 +113,7 @@
 }
 
 - (void)configCell:(UITableViewCell *)cell AtIndexPath:(NSIndexPath *)indexPath {
+    
     CellInfo *info = (CellInfo*)[self.dataArray objectAtIndex:indexPath.row];
     if (!info.isStart) {
         // 第一次出現,開始更新數值
@@ -130,12 +132,11 @@
     for (NSInteger i = 0; i < self.dataArray.count; i++) {
         CellInfo *info = (CellInfo*)[self.dataArray objectAtIndex:i];
         if (info.isStart == YES) {
-            if (info.curValue < info.endValue) {
+            if ((NSInteger)info.curValue < (NSInteger)info.endValue) {
                 info.curValue += info.changeValue;
-                
-                // 重新載入 cell
-                //NSIndexPath *indexPath = [NSIndexPath indexPathForRow:i inSection:0];
-                //[self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
+            }
+            else {
+                info.curValue = info.endValue;
             }
         }
         
