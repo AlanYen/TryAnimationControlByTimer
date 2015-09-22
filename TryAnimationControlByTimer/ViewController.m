@@ -81,17 +81,19 @@
         self.timer = nil;
     }
     
-    [self initializeData];
-    [self.tableView setContentOffset:CGPointMake(0.0f, -self.tableView.contentInset.top) animated:NO];
-    [self.tableView reloadData];
-    
-    self.timer = [NSTimer scheduledTimerWithTimeInterval:kTimerInterval
-                                                  target:self
-                                                selector:@selector(updateTime)
-                                                userInfo:nil
-                                                 repeats:YES];
-    [[NSRunLoop currentRunLoop] addTimer:self.timer
-                                 forMode:NSRunLoopCommonModes];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(kTimerInterval * 2.0f * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [self initializeData];
+        [self.tableView setContentOffset:CGPointMake(0.0f, -self.tableView.contentInset.top) animated:NO];
+        [self.tableView reloadData];
+        
+        self.timer = [NSTimer scheduledTimerWithTimeInterval:kTimerInterval
+                                                      target:self
+                                                    selector:@selector(updateTime)
+                                                    userInfo:nil
+                                                     repeats:YES];
+        [[NSRunLoop currentRunLoop] addTimer:self.timer
+                                     forMode:NSRunLoopCommonModes];
+    });
 }
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
@@ -132,13 +134,17 @@
     for (NSInteger i = 0; i < self.dataArray.count; i++) {
         CellInfo *info = (CellInfo*)[self.dataArray objectAtIndex:i];
         if (info.isStart == YES) {
-            if ((NSInteger)info.curValue < (NSInteger)info.endValue) {
+            if (info.curValue < info.endValue) {
                 info.curValue += info.changeValue;
             }
-            else {
+
+            if (info.curValue > info.endValue) {
                 info.curValue = info.endValue;
             }
         }
+
+        // Debug
+        NSLog(@"%f", info.curValue);
         
         if (info.curValue < info.endValue) {
             isAllStop = NO;
